@@ -1,6 +1,6 @@
   <div align="center">
 
-# 🏏 CricketApp
+# 🏏 CCA
 
 **A full-stack real-time cricket scoring platform for local tournaments**
 
