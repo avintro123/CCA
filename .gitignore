@@ -1,0 +1,10 @@
+# Secrets
+client_secret*.json
+*.pem
+
+# Environment
+.env
+.env.*
+
+# Node
+node_modules/
