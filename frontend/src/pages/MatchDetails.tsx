@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import GlassCard from "../components/GlassCard";
 import PageEntrance from "../components/PageEntrance";
 import { Trophy, Clock, ArrowLeft, Users, Calendar, Shield } from "lucide-react";
+import { API_URL } from "../services/api";
 
 export default function MatchDetails() {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +16,7 @@ export default function MatchDetails() {
     if (!id) return;
     const fetchMatch = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/match/${id}`);
+        const res = await fetch(`${API_URL}/match/${id}`);
         const data = await res.json();
         if (data.data) {
           setMatch(data.data);

@@ -5,6 +5,7 @@ import { Loader2, Plus, Save, Trash, Trophy } from "lucide-react";
 import GlassCard from "../components/GlassCard";
 import NeonButton from "../components/NeonButton";
 import PageEntrance from "../components/PageEntrance";
+import { API_URL } from "../services/api";
 
 const PlayerRole = {
   BATSMAN: "BATSMAN",
@@ -87,7 +88,7 @@ export default function RegisterTeam() {
         text: "Submitting Roaster to backend...",
       });
 
-      const response = await fetch("http://localhost:3000/tournament/teams", {
+      const response = await fetch(`${API_URL}/tournament/teams`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

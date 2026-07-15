@@ -5,6 +5,7 @@ import AnimatedScore from "../components/AnimatedScore";
 import PageEntrance from "../components/PageEntrance";
 import { Activity, Clock, Trophy } from "lucide-react";
 import { useNavigate } from "react-router";
+import { API_URL } from "../services/api";
 
 export default function LiveMatch() {
   const [matches, setMatches] = useState<any[]>([]);
@@ -74,7 +75,7 @@ export default function LiveMatch() {
 
     const fetchMatches = async () => {
       try {
-        const res = await fetch("http://localhost:3000/match");
+        const res = await fetch(`${API_URL}/match`);
         const data = await res.json();
         setMatches(data.data || []);
       } catch (err) {
@@ -92,7 +93,7 @@ export default function LiveMatch() {
 
     const fetchMatchData = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/match/${activeMatchId}`);
+        const res = await fetch(`${API_URL}/match/${activeMatchId}`);
         const data = await res.json();
         if (data.data) {
           setMatchData(data.data);
@@ -110,7 +111,7 @@ export default function LiveMatch() {
 
     setConnectionStatus("Connecting...");
 
-    const newSocket = io("http://localhost:3000");
+    const newSocket = io(API_URL);
     setSocket(newSocket);
 
     newSocket.on("connect", () => {

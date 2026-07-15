@@ -83,6 +83,7 @@ export class TournamentService {
           isCaptain: p.name.toLowerCase().includes(captainName),
         }));
       }
+      return teamObj;
     });
   }
 

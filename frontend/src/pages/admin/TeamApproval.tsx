@@ -4,6 +4,7 @@ import GlassCard from "../../components/GlassCard";
 import { ShieldAlert, CheckCircle, Clock } from "lucide-react";
 import PageEntrance from "../../components/PageEntrance";
 import { useToastStore } from "../../store/useToastStore";
+import { API_URL } from "../../services/api";
 
 export default function TeamApproval() {
   const { token, user } = useAuthStore();
@@ -14,7 +15,7 @@ export default function TeamApproval() {
   const fetchTeams = async () => {
     if (!token) return;
     try {
-      const res = await fetch("http://localhost:3000/tournament/teams", {
+      const res = await fetch(`${API_URL}/tournament/teams`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -32,7 +33,7 @@ export default function TeamApproval() {
 
   const handleApprove = async (teamId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/tournament/teams/${teamId}/approve`, {
+      const res = await fetch(`${API_URL}/tournament/teams/${teamId}/approve`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });

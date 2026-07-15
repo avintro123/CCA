@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import GlassCard from "../components/GlassCard";
 import PageEntrance from "../components/PageEntrance";
 import { Trophy, ArrowLeft, Users, ShieldAlert, Award, Star, Mail, CheckCircle } from "lucide-react";
+import { API_URL } from "../services/api";
 
 interface TeamMember {
   name: string;
@@ -33,8 +34,8 @@ export default function TeamDetails() {
     const fetchTeamData = async () => {
       try {
         const [tRes, mRes] = await Promise.all([
-          fetch(`http://localhost:3000/tournament/teams/${id}`),
-          fetch("http://localhost:3000/match"),
+          fetch(`${API_URL}/tournament/teams/${id}`),
+          fetch(`${API_URL}/match`),
         ]);
         const tData = await tRes.json();
         const mData = await mRes.json();

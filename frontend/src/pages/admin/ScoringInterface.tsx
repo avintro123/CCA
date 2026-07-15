@@ -15,6 +15,7 @@ import NeonButton from "../../components/NeonButton";
 import PageEntrance from "../../components/PageEntrance";
 import { useToastStore } from "../../store/useToastStore";
 import { useNavigate } from "react-router";
+import { API_URL } from "../../services/api";
 
 export default function ScoringInterface() {
   const { token, user } = useAuthStore();
@@ -95,8 +96,8 @@ export default function ScoringInterface() {
     const fetchData = async () => {
       try {
         const [mRes, tRes] = await Promise.all([
-          fetch("http://localhost:3000/match"),
-          fetch("http://localhost:3000/tournament/teams", {
+          fetch(`${API_URL}/match`),
+          fetch(`${API_URL}/tournament/teams`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -120,7 +121,7 @@ export default function ScoringInterface() {
       return;
     }
 
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io(API_URL, {
       auth: { token },
     });
 
@@ -176,7 +177,7 @@ export default function ScoringInterface() {
   const handleScheduleMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3000/match", {
+      const res = await fetch(`${API_URL}/match`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -249,7 +250,7 @@ export default function ScoringInterface() {
     }
 
     try{
-      const res=await fetch(`http://localhost:3000/match/${activeMatch._id}/complete`,{
+      const res=await fetch(`${API_URL}/match/${activeMatch._id}/complete`,{
         method:'PUT',
         headers:{
            "Content-Type": "application/json",
@@ -282,7 +283,7 @@ export default function ScoringInterface() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/match/${activeMatch._id}/toss`, {
+      const res = await fetch(`${API_URL}/match/${activeMatch._id}/toss`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
