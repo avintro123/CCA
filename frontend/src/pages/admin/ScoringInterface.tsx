@@ -49,7 +49,6 @@ export default function ScoringInterface() {
   const [flashClass, setFlashClass] = useState("");
   const [shakeActive, setShakeActive] = useState(false);
   const scorecardRef = useRef<HTMLDivElement>(null);
-  const prevBallCount = useRef(0);
 
   // Ripple effect handler
   const createRipple = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {

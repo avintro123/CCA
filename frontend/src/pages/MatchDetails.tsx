@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import GlassCard from "../components/GlassCard";
 import PageEntrance from "../components/PageEntrance";
-import { Trophy, Clock, ArrowLeft, Users, Calendar, Shield } from "lucide-react";
+import { Trophy, Clock, ArrowLeft, Calendar, Shield } from "lucide-react";
 import { API_URL } from "../services/api";
 
 export default function MatchDetails() {

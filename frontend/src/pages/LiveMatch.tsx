@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import GlassCard from "../components/GlassCard";
 import AnimatedScore from "../components/AnimatedScore";
 import PageEntrance from "../components/PageEntrance";
@@ -10,12 +10,10 @@ import { API_URL } from "../services/api";
 export default function LiveMatch() {
   const [matches, setMatches] = useState<any[]>([]);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [matchData, setMatchData] = useState<any>(null);
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [scorePulse, setScorePulse] = useState(false);
   const [lobbyLoading, setLobbyLoading] = useState(true);
-  const scorecardRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const getProcessedStats = (ballLog: any[]) => {
@@ -112,7 +110,6 @@ export default function LiveMatch() {
     setConnectionStatus("Connecting...");
 
     const newSocket = io(API_URL);
-    setSocket(newSocket);
 
     newSocket.on("connect", () => {
       setConnectionStatus("Live");

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import GlassCard from "../components/GlassCard";
 import PageEntrance from "../components/PageEntrance";
-import { Trophy, ArrowLeft, Users, ShieldAlert, Award, Star, Mail, CheckCircle } from "lucide-react";
+import { ArrowLeft, Users, ShieldAlert, Award, Star, Mail } from "lucide-react";
 import { API_URL } from "../services/api";
 
 interface TeamMember {

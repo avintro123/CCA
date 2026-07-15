@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import GlassCard from "./GlassCard";
-import { Clock, Play } from "lucide-react";
+import { Clock } from "lucide-react";
 
 interface CountdownMatch {
   _id: string;
