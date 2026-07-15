@@ -67,6 +67,9 @@ export class Match extends Document {
   @Prop({ default: 20 })
   totalOvers: number;
 
+  @Prop({ type: Date, default: Date.now })
+  date: Date;
+
   @Prop({ type: Number, default: 1 })
   currentInnings: number;
 

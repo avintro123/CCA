@@ -1,6 +1,7 @@
 import {
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -13,6 +14,14 @@ export class CreateMatchDto {
   @IsString()
   @IsNotEmpty()
   teamB: string;
+
+  @IsOptional()
+  @IsNumber()
+  totalOvers?: number;
+
+  @IsOptional()
+  @IsString()
+  date?: string;
 
   @IsOptional()
   @IsString()

@@ -11,6 +11,13 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Curtain from "./components/Curtain";
 import RegisterTeam from "./pages/RegisterTeam";
+import TeamApproval from "./pages/admin/TeamApproval";
+import ParticleBackground from "./components/ParticleBackground";
+import ToastContainer from "./components/ToastContainer";
+import CursorGlow from "./components/CursorGlow";
+import ScrollProgress from "./components/ScrollProgress";
+import MatchDetails from "./pages/MatchDetails";
+import TeamDetails from "./pages/TeamDetails";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -58,6 +65,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
+      <ParticleBackground />
+      <CursorGlow />
+      <ScrollProgress />
+      <ToastContainer />
       <Curtain />
       <Navbar />
       <main className="max-w-7xl mx-auto px-6 pt-24 pb-0">
@@ -68,7 +79,10 @@ function App() {
           <Route path="/live" element={<LiveMatch />} />
 
           <Route path="/admin" element={<ScoringInterface />} />
+          <Route path="/admin/teams" element={<TeamApproval />} />
           <Route path="/register" element={<RegisterTeam />} />
+          <Route path="/match/:id" element={<MatchDetails />} />
+          <Route path="/team/:id" element={<TeamDetails />} />
         </Routes>
       </main>
     </div>

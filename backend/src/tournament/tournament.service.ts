@@ -83,9 +83,32 @@ export class TournamentService {
           isCaptain: p.name.toLowerCase().includes(captainName),
         }));
       }
-      return teamObj;
     });
   }
+
+  async getTeamById(teamId: string) {
+    const team = await this.teamModel
+      .findById(teamId)
+      .populate('captainId', 'name avatar email')
+      .exec();
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+    const teamObj = team.toObject();
+    const hasCaptain = teamObj.players.some((p: any) => p.isCaptain);
+
+    if (!hasCaptain && teamObj.captainId) {
+      const captainName = (teamObj.captainId as any).name
+        .split(' ')[0]
+        .toLowerCase();
+      teamObj.players = teamObj.players.map((p: any) => ({
+        ...p,
+        isCaptain: p.name.toLowerCase().includes(captainName),
+      }));
+    }
+    return teamObj;
+  }
+
 
   async getStandings() {
     const teams = await this.teamModel.find({ status: 'APPROVED' }).lean();

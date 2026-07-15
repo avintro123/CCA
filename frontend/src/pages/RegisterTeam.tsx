@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Loader2, Plus, Save, Trash, Trophy } from "lucide-react";
 import GlassCard from "../components/GlassCard";
 import NeonButton from "../components/NeonButton";
+import PageEntrance from "../components/PageEntrance";
 
 const PlayerRole = {
   BATSMAN: "BATSMAN",
@@ -137,11 +138,11 @@ export default function RegisterTeam() {
   }
 
   return (
-    <div className="py-12 max-w-5xl mx-auto min-h-screen">
+    <PageEntrance className="py-12 max-w-5xl mx-auto min-h-screen">
       <div className="flex items-center gap-4 mb-10">
         <Trophy className="text-neon w-10 h-10" />
-        <h1 className="text-4xl font-bold font-heading text-white">
-          Register <span className="text-glow text-neon">Your Squad</span>
+        <h1 className="text-4xl font-bold font-display text-white">
+          Register <span className="text-glow text-neon">Your Team</span>
         </h1>
       </div>
       <GlassCard padding="p-8">
@@ -266,6 +267,6 @@ export default function RegisterTeam() {
           </div>
         </form>
       </GlassCard>
-    </div>
+    </PageEntrance>
   );
 }

@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import GlassCard from "../components/GlassCard";
+import AnimatedScore from "../components/AnimatedScore";
+import PageEntrance from "../components/PageEntrance";
 import { Activity, Clock, Trophy } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function LiveMatch() {
   const [matches, setMatches] = useState<any[]>([]);
@@ -9,6 +12,10 @@ export default function LiveMatch() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [matchData, setMatchData] = useState<any>(null);
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
+  const [scorePulse, setScorePulse] = useState(false);
+  const [lobbyLoading, setLobbyLoading] = useState(true);
+  const scorecardRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const getProcessedStats = (ballLog: any[]) => {
     const batting: Record<string, any> = {};
@@ -55,6 +62,12 @@ export default function LiveMatch() {
     ? getProcessedStats(matchData.ballLog)
     : { batting: {}, bowling: {} };
 
+  // Trigger score pulse animation
+  const triggerScorePulse = () => {
+    setScorePulse(true);
+    setTimeout(() => setScorePulse(false), 800);
+  };
+
   // 1. Fetching available matches for the Spectator Lobby
   useEffect(() => {
     if (activeMatchId) return; // Don't fetch lobby if already inside a match
@@ -66,6 +79,8 @@ export default function LiveMatch() {
         setMatches(data.data || []);
       } catch (err) {
         console.log("Failed to load match lobby.");
+      } finally {
+        setLobbyLoading(false);
       }
     };
     fetchMatches();
@@ -110,6 +125,7 @@ export default function LiveMatch() {
 
     newSocket.on("scoreUpdated", (data) => {
       setMatchData(data);
+      triggerScorePulse();
     });
 
     return () => {
@@ -123,24 +139,46 @@ export default function LiveMatch() {
 
   if (!activeMatchId) {
     return (
-      <div className="py-12 max-w-6xl mx-auto min-h-screen">
-        <h1 className="text-4xl md:text-5xl font-bold font-heading text-white mb-10 pb-4 border-b border-white/10">
+      <PageEntrance className="py-12 max-w-6xl mx-auto min-h-screen">
+        <h1 className="text-4xl md:text-5xl font-bold font-display text-white mb-10 pb-4 border-b border-white/10">
           Tournament <span className="text-glow text-neon">Lobby</span>
         </h1>
 
-        {matches.length === 0 ? (
+        {lobbyLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="glass-panel p-6 rounded-2xl">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="h-5 w-20 bg-white/5 rounded-full animate-pulse" />
+                  <div className="h-4 w-16 bg-white/5 rounded animate-pulse" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-6 w-28 bg-white/5 rounded animate-pulse" />
+                  <div className="h-4 w-8 bg-white/5 rounded animate-pulse" />
+                  <div className="h-6 w-28 bg-white/5 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : matches.length === 0 ? (
           <div className="text-center text-gray-400 py-20 text-xl font-heading">
             No matches scheduled currently!
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {matches.map((m) => {
-              const isCompleted = m.status === "COMPLETED"; // Adjust based on your actual backend status fields
+              const isCompleted = m.status === "COMPLETED";
 
               return (
                 <div
                   key={m._id}
-                  onClick={() => setActiveMatchId(m._id)}
+                  onClick={() => {
+                    if (isCompleted) {
+                      navigate(`/match/${m._id}`);
+                    } else {
+                      setActiveMatchId(m._id);
+                    }
+                  }}
                   className={`relative p-6 rounded-2xl cursor-pointer transition-all duration-300 border backdrop-blur-md overflow-hidden group
                     ${
                       isCompleted
@@ -150,8 +188,9 @@ export default function LiveMatch() {
                 >
                   <div className="flex justify-between items-center mb-6 relative z-10">
                     <span
-                      className={`text-xs font-bold tracking-widest px-3 py-1 rounded-full ${isCompleted ? "bg-gray-700 text-gray-300" : "bg-red-500 text-white animate-pulse"}`}
+                      className={`text-xs font-bold tracking-widest px-3 py-1 rounded-full flex items-center gap-2 ${isCompleted ? "bg-gray-700 text-gray-300" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
                     >
+                      {!isCompleted && <span className="live-pulse-dot" />}
                       {isCompleted ? "HISTORY" : "LIVE NOW"}
                     </span>
                     <span className="text-gray-400 text-sm font-heading flex items-center gap-2">
@@ -188,7 +227,7 @@ export default function LiveMatch() {
             })}
           </div>
         )}
-      </div>
+      </PageEntrance>
     );
   }
 
@@ -197,7 +236,7 @@ export default function LiveMatch() {
   // -------------------------
 
   return (
-    <div className="py-12 max-w-6xl mx-auto min-h-screen">
+    <PageEntrance className="py-12 max-w-6xl mx-auto min-h-screen">
       <div className="mb-4">
         <button
           onClick={() => setActiveMatchId(null)}
@@ -208,14 +247,14 @@ export default function LiveMatch() {
       </div>
 
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold font-heading text-white">
+        <h1 className="text-4xl font-bold font-display text-white">
           Real-Time <span className="text-glow text-neon">Scorecard</span>
         </h1>
         <div
           className={`px-4 py-1 flex items-center gap-2 rounded-full font-bold text-sm ${connectionStatus === "Live" ? "bg-red-500/20 text-red-500 border border-red-500" : "bg-gray-800 text-gray-400"}`}
         >
           {connectionStatus === "Live" && (
-            <Activity className="w-4 h-4 animate-pulse" />
+            <span className="live-pulse-dot" />
           )}
           <span>{connectionStatus}</span>
         </div>
@@ -223,7 +262,7 @@ export default function LiveMatch() {
 
       <GlassCard
         padding="py-16"
-        className="text-center text-white relative overflow-hidden"
+        className={`text-center text-white relative overflow-hidden transition-shadow duration-300 gradient-mesh-scorecard ${scorePulse ? "score-update-pulse" : ""}`}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-neon/10 rounded-full blur-[100px] pointer-events-none"></div>
         {matchData ? (
@@ -234,9 +273,9 @@ export default function LiveMatch() {
                 1st Innings
               </h3>
               <div className="text-7xl font-heading font-black tracking-tighter text-glow text-neon">
-                {matchData.innings1?.score ?? 0}
+                <AnimatedScore value={matchData.innings1?.score ?? 0} />
                 <span className="text-3xl text-white opacity-50">
-                  / {matchData.innings1?.wickets ?? 0}
+                  / <AnimatedScore value={matchData.innings1?.wickets ?? 0} />
                 </span>
               </div>
               <p className="text-lg text-gray-400 tracking-widest mt-2">
@@ -252,9 +291,9 @@ export default function LiveMatch() {
                   2nd Innings
                 </h3>
                 <div className="text-7xl font-heading font-black tracking-tighter text-glow text-neon">
-                  {matchData.innings2?.score ?? 0}
+                  <AnimatedScore value={matchData.innings2?.score ?? 0} />
                   <span className="text-3xl text-white opacity-50">
-                    / {matchData.innings2?.wickets ?? 0}
+                    / <AnimatedScore value={matchData.innings2?.wickets ?? 0} />
                   </span>
                 </div>
                 <p className="text-lg text-gray-400 tracking-widest mt-2">
@@ -375,6 +414,6 @@ export default function LiveMatch() {
           </div>
         </div>
       </GlassCard>
-    </div>
+    </PageEntrance>
   );
 }

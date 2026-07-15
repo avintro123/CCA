@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import NeonButton from "../components/NeonButton";
 import Bottom from "../components/bottom";
+import MatchCountdown from "../components/MatchCountdown";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -217,7 +218,10 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+    <div className="gradient-mesh-hero -mx-6 px-6">
+      <div className="max-w-7xl mx-auto pt-6 px-6">
+        <MatchCountdown />
+      </div>
       {/* 1. Hero Slideshow Section */}
       <div className="relative w-full h-[80vh] rounded-3xl overflow-hidden shadow-2xl border border-dark-border mt-4">
         {SLIDE_IMAGES.map((img, index) => (
@@ -244,7 +248,7 @@ export default function Home() {
           >
             Live Matches
           </NeonButton>
-          <h1 className="text-6xl md:text-8xl font-bold font-heading text-white mb-4 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex flex-wrap justify-center overflow-hidden py-2 gap-[1px]">
+          <h1 className="text-6xl md:text-8xl font-bold font-display text-white mb-4 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex flex-wrap justify-center overflow-hidden py-2 gap-[1px]">
             {"Welcome to ".split("").map((char, i) => (
               <span
                 key={`w-${i}`}
@@ -300,7 +304,7 @@ export default function Home() {
 
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <div className="sticky top-[25vh] ml-8 md:ml-[120px] flex flex-col w-[90vw] pointer-events-auto mt-[9rem]">
-            <h1 className="font-heading text-neon text-glow text-[clamp(80px,9.5vw,160px)] leading-[0.85] uppercase font-bold tracking-wide mb-8 flex flex-wrap pt-4">
+            <h1 className="font-display text-neon text-glow text-[clamp(80px,9.5vw,160px)] leading-[0.85] uppercase font-bold tracking-wide mb-8 flex flex-wrap pt-4">
               {"ABOUT OUR".split("").map((char, i) => (
                 <span
                   key={`a-${i}`}
@@ -350,15 +354,15 @@ export default function Home() {
         {/* Sticky Background Tagline */}
         <span className="sticky top-[50vh] -translate-y-1/2 z-[4] w-[80%] md:w-[60%] flex flex-wrap justify-center items-center text-[26px] md:text-[42px] italic text-center drop-shadow-2xl">
           An&nbsp;
-          <span className="font-heading font-bold text-neon text-glow text-[36px] md:text-[64px] not-italic drop-shadow-none">
+          <span className="font-display font-bold text-neon text-glow text-[36px] md:text-[64px] not-italic drop-shadow-none">
             UNFORGETTABLE
           </span>
           &nbsp;tournament in the heart of our&nbsp;
-          <span className="font-heading font-bold text-neon text-glow text-[36px] md:text-[64px] not-italic drop-shadow-none">
+          <span className="font-display font-bold text-neon text-glow text-[36px] md:text-[64px] not-italic drop-shadow-none">
             TOWN.
           </span>{" "}
           &nbsp;Fierce competition and a love for the&nbsp;
-          <span className="font-heading font-bold text-white text-[36px] md:text-[64px] not-italic drop-shadow-none">
+          <span className="font-display font-bold text-white text-[36px] md:text-[64px] not-italic drop-shadow-none">
             GAME
           </span>
           &nbsp;
@@ -390,6 +394,6 @@ export default function Home() {
       </div>
       {/* 4. Elastic Text Footer */}
       <Bottom />
-    </>
+    </div>
   );
 }

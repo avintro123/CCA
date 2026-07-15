@@ -1,14 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
 @theme {
   --color-neon: #b2ff05;
   --color-neon-hover: #9be600;
 
+  --color-accent-purple: #a855f7;
+  --color-accent-pink: #f43f5e;
+
   --color-dark-bg: #0b0e14;
   --color-dark-card: rgba(20, 24, 33, 0.6);
   --color-dark-border: rgba(255, 255, 255, 0.08);
 
+  --font-display: "Outfit", "Space Grotesk", system-ui, sans-serif;
   --font-heading: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Space Grotesk", system-ui, sans-serif;
 }
@@ -16,6 +21,19 @@
 @layer base {
   body {
     @apply bg-dark-bg text-white font-sans antialiased min-h-screen selection:bg-neon selection:text-black;
+  }
+
+  /* Noise grain texture overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9997;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
   }
 
   h1,
@@ -36,4 +54,191 @@
   .text-glow {
     text-shadow: 0 0 15px rgba(178, 255, 5, 0.4);
   }
+
+  .text-glow-gold {
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+  }
+
+  .text-glow-silver {
+    text-shadow: 0 0 15px rgba(192, 192, 192, 0.4);
+  }
+
+  .text-glow-bronze {
+    text-shadow: 0 0 15px rgba(205, 127, 50, 0.4);
+  }
+
+  .text-glow-purple {
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+  }
+
+  .text-glow-pink {
+    text-shadow: 0 0 20px rgba(244, 63, 94, 0.5);
+  }
+
+  /* Gradient mesh background utilities */
+  .gradient-mesh-hero {
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(178, 255, 5, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, rgba(244, 63, 94, 0.05) 0%, transparent 50%);
+  }
+
+  .gradient-mesh-scorecard {
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(178, 255, 5, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 70%, rgba(168, 85, 247, 0.04) 0%, transparent 50%);
+  }
+
+  .gradient-mesh-subtle {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(168, 85, 247, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 100%, rgba(178, 255, 5, 0.03) 0%, transparent 60%);
+  }
+}
+
+/* ===== RIPPLE EFFECT ===== */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-container .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(178, 255, 5, 0.35);
+  transform: scale(0);
+  animation: ripple-expand 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ripple-expand {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ===== SCREEN SHAKE ===== */
+.screen-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  10% { transform: translateX(-4px) translateY(2px); }
+  20% { transform: translateX(4px) translateY(-2px); }
+  30% { transform: translateX(-3px) translateY(1px); }
+  40% { transform: translateX(3px) translateY(-1px); }
+  50% { transform: translateX(-2px) translateY(2px); }
+  60% { transform: translateX(2px) translateY(-1px); }
+  70% { transform: translateX(-1px) translateY(1px); }
+  80% { transform: translateX(1px) translateY(0); }
+}
+
+/* ===== BOUNDARY FLASH ===== */
+.boundary-flash {
+  animation: boundary-pulse 0.6s ease-out forwards;
+}
+
+@keyframes boundary-pulse {
+  0% { box-shadow: inset 0 0 60px rgba(178, 255, 5, 0.4), 0 0 40px rgba(178, 255, 5, 0.3); }
+  50% { box-shadow: inset 0 0 30px rgba(178, 255, 5, 0.15), 0 0 20px rgba(178, 255, 5, 0.1); }
+  100% { box-shadow: none; }
+}
+
+.boundary-flash-six {
+  animation: boundary-pulse-six 0.7s ease-out forwards;
+}
+
+@keyframes boundary-pulse-six {
+  0% { box-shadow: inset 0 0 80px rgba(168, 85, 247, 0.5), 0 0 60px rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: inset 0 0 40px rgba(168, 85, 247, 0.2), 0 0 30px rgba(168, 85, 247, 0.15); }
+  100% { box-shadow: none; }
+}
+
+/* ===== WICKET FLASH ===== */
+.wicket-flash {
+  animation: wicket-pulse 0.5s ease-out forwards;
+}
+
+@keyframes wicket-pulse {
+  0% { box-shadow: inset 0 0 80px rgba(220, 38, 38, 0.5), 0 0 60px rgba(220, 38, 38, 0.4); }
+  50% { box-shadow: inset 0 0 30px rgba(220, 38, 38, 0.15), 0 0 20px rgba(220, 38, 38, 0.1); }
+  100% { box-shadow: none; }
+}
+
+/* ===== BALL CHIP FLY-IN ===== */
+.chip-fly-in {
+  animation: chip-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes chip-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(30px) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ===== RANK BADGE SHIMMER ===== */
+.rank-badge-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.rank-badge-shimmer::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 60%
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%); }
+  100% { transform: translateX(100%) translateY(100%); }
+}
+
+/* ===== LIVE PULSE DOT ===== */
+.live-pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  position: relative;
+}
+
+.live-pulse-dot::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: live-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes live-ping {
+  0% { transform: scale(1); opacity: 0.6; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ===== SCORE UPDATE PULSE ===== */
+.score-update-pulse {
+  animation: score-glow 0.8s ease-out;
+}
+
+@keyframes score-glow {
+  0% { box-shadow: inset 0 0 40px rgba(178, 255, 5, 0.2); }
+  100% { box-shadow: none; }
 }

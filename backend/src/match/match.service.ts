@@ -10,7 +10,7 @@ import {
   Match,
   MatchStatus,
 } from './schemas/match.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { RecordBallDto } from './dto/record-ball.dto';
 
@@ -43,7 +43,9 @@ export class MatchService {
   }
 
   async recordBall(dto: RecordBallDto) {
-    const match = await this.matchModel.findById(dto.matchId);
+    const match = await this.matchModel
+      .findById(dto.matchId)
+      .populate('teamA teamB');
     if (!match) {
       throw new NotFoundException('Match not found');
     }
@@ -53,7 +55,11 @@ export class MatchService {
 
     // Validate wicket types on extras
     if (dto.isWicket && dto.extraType === 'WIDE') {
-      if (dto.wicketType && dto.wicketType !== 'RUN_OUT' && dto.wicketType !== 'STUMPED') {
+      if (
+        dto.wicketType &&
+        dto.wicketType !== 'RUN_OUT' &&
+        dto.wicketType !== 'STUMPED'
+      ) {
         throw new BadRequestException(
           'Only RUN_OUT and STUMPED are valid dismissals on a wide ball',
         );
@@ -69,6 +75,28 @@ export class MatchService {
 
     if (match.status === MatchStatus.SCHEDULED) {
       match.status = MatchStatus.LIVE;
+
+      // Set batting team for each innings based on toss, or default to teamA first
+      if (!match.innings1.battingTeamId) {
+        const teamAId = match.teamA._id.toString();
+        const teamBId = match.teamB._id.toString();
+
+        if (match.tossWinner && match.tossDecision) {
+          const tossWinnerId = match.tossWinner.toString();
+          if (match.tossDecision === 'BAT') {
+            match.innings1.battingTeamId = tossWinnerId;
+            match.innings2.battingTeamId =
+              tossWinnerId === teamAId ? teamBId : teamAId;
+          } else {
+            match.innings1.battingTeamId =
+              tossWinnerId === teamAId ? teamBId : teamAId;
+            match.innings2.battingTeamId = tossWinnerId;
+          }
+        } else {
+          match.innings1.battingTeamId = teamAId;
+          match.innings2.battingTeamId = teamBId;
+        }
+      }
     }
 
     const inningsKey = match.currentInnings === 1 ? 'innings1' : 'innings2';
@@ -185,6 +213,43 @@ export class MatchService {
       match.status = MatchStatus.COMPLETED;
     }
 
+    // ===== AUTO-SET WINNER & RESULT SUMMARY =====
+    if (match.status === MatchStatus.COMPLETED) {
+      const teamAId = match.teamA._id.toString();
+      const teamBId = match.teamB._id.toString();
+      const teamAName = (match.teamA as any).name || 'Team A';
+      const teamBName = (match.teamB as any).name || 'Team B';
+
+      const battingFirstId = match.innings1.battingTeamId;
+      const battingSecondId = match.innings2.battingTeamId;
+
+      const battingFirstName =
+        battingFirstId === teamAId ? teamAName : teamBName;
+      const battingSecondName =
+        battingSecondId === teamAId ? teamAName : teamBName;
+
+      const score1 = match.innings1.score;
+      const score2 = match.innings2.score;
+
+      if (score2 > score1) {
+        // Chasing team won
+        const wicketsLeft = 10 - match.innings2.wickets;
+        match.winner =
+          battingSecondId === teamAId ? match.teamA._id : match.teamB._id;
+        match.resultSummary = `${battingSecondName} won by ${wicketsLeft} wicket${wicketsLeft !== 1 ? 's' : ''}`;
+      } else if (score1 > score2) {
+        // Batting-first team won
+        const runMargin = score1 - score2;
+        match.winner =
+          battingFirstId === teamAId ? match.teamA._id : match.teamB._id;
+        match.resultSummary = `${battingFirstName} won by ${runMargin} run${runMargin !== 1 ? 's' : ''}`;
+      } else {
+        // Tie
+        match.winner = null as any;
+        match.resultSummary = 'Match Tied';
+      }
+    }
+
     match.liveScorecard = {
       currentInnings: match.currentInnings,
       battingTeam: innings.battingTeamId,
@@ -214,6 +279,8 @@ export class MatchService {
       currentInnings: match.currentInnings,
       status: match.status,
       liveScorecard: match.liveScorecard,
+      winner: match.winner,
+      resultSummary: match.resultSummary,
     };
   }
 
@@ -231,7 +298,7 @@ export class MatchService {
 
   async completeMatch(
     matchId: string,
-    winnerId: string,
+    winnerId: string,   
     resultSummary: string,
   ) {
     const match = await this.matchModel.findByIdAndUpdate(
@@ -249,6 +316,34 @@ export class MatchService {
       throw new NotFoundException('Match not found');
     }
     return match;
+  }
+
+  async setToss(matchId: string, tossWinnerId: string, tossDecision: 'BAT' | 'BOWL') {
+    const match = await this.matchModel.findById(matchId);
+    if (!match) {
+      throw new NotFoundException('Match not found');
+    }
+
+    match.tossWinner = new Types.ObjectId(tossWinnerId);
+    match.tossDecision = tossDecision;
+    match.status = MatchStatus.LIVE;
+
+    const teamAId = match.teamA.toString();
+    const teamBId = match.teamB.toString();
+
+    if (tossDecision === 'BAT') {
+      match.innings1.battingTeamId = tossWinnerId;
+      match.innings2.battingTeamId = tossWinnerId === teamAId ? teamBId : teamAId;
+    } else {
+      match.innings1.battingTeamId = tossWinnerId === teamAId ? teamBId : teamAId;
+      match.innings2.battingTeamId = tossWinnerId;
+    }
+
+    // Set active team on live scorecard
+    match.liveScorecard.currentInnings = 1;
+    match.liveScorecard.battingTeam = match.innings1.battingTeamId;
+
+    return await match.save();
   }
 
   // helper: get ball for a specific match

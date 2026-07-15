@@ -68,6 +68,15 @@ export class TournamentController {
     };
   }
 
+  @Get('teams/:id')
+  async getTeam(@Param('id') teamId: string) {
+    const team = await this.tournamentService.getTeamById(teamId);
+    return {
+      message: 'Retrieved team details successfully',
+      data: team,
+    };
+  }
+
   @Get('standings')
   async getStandings() {
     const table = await this.tournamentService.getStandings();

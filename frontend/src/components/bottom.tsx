@@ -12,7 +12,7 @@ const Bottom = () => {
         {brandWords.map((word, index) => (
           <button
             key={`${word}-${index}`}
-            className="border-none bg-transparent text-white hover:text-neon p-0 m-0 cursor-pointer leading-[0.9] text-[clamp(8rem,30vw,35rem)] font-heading font-bold tracking-[0.05em] whitespace-nowrap origin-bottom transition-all duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[2.9rem] hover:scale-x-[0.88] hover:scale-y-[1.18]"
+            className="border-none bg-transparent text-white hover:text-neon p-0 m-0 cursor-pointer leading-[0.9] text-[clamp(8rem,30vw,35rem)] font-display font-bold tracking-[0.05em] whitespace-nowrap origin-bottom transition-all duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[2.9rem] hover:scale-x-[0.88] hover:scale-y-[1.18]"
             type="button"
           >
             {word}

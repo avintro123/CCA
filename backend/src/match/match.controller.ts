@@ -64,6 +64,24 @@ export class MatchController {
     };
   }
 
+  @Put(':id/toss')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SCORER)
+  async setToss(
+    @Param('id') matchId: string,
+    @Body() body: { tossWinner: string; tossDecision: 'BAT' | 'BOWL' },
+  ) {
+    const match = await this.matchService.setToss(
+      matchId,
+      body.tossWinner,
+      body.tossDecision,
+    );
+    return {
+      message: 'Toss results successfully updated!',
+      data: match,
+    };
+  }
+
   @Put(':id/complete')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SCORER)
