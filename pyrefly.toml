@@ -1,0 +1,6 @@
+# pyrefly.toml at root of project
+
+site-package-path = [
+    "ai-service/venv/Lib/site-packages"
+]
+python-interpreter = "ai-service/venv/Scripts/python.exe"

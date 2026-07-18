@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import GlassCard from "../components/GlassCard";
 import AnimatedScore from "../components/AnimatedScore";
 import PageEntrance from "../components/PageEntrance";
+import AiCommentary from "../components/AiCommentary";
 import { Activity, Clock, Trophy } from "lucide-react";
 import { useNavigate } from "react-router";
 import { API_URL } from "../services/api";
@@ -14,7 +15,13 @@ export default function LiveMatch() {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [scorePulse, setScorePulse] = useState(false);
   const [lobbyLoading, setLobbyLoading] = useState(true);
+  const [commentaryList, setCommentaryList] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  // Reset commentary on match change
+  useEffect(() => {
+    setCommentaryList([]);
+  }, [activeMatchId]);
 
   const getProcessedStats = (ballLog: any[]) => {
     const batting: Record<string, any> = {};
@@ -124,6 +131,10 @@ export default function LiveMatch() {
     newSocket.on("scoreUpdated", (data) => {
       setMatchData(data);
       triggerScorePulse();
+    });
+
+    newSocket.on("aiCommentary", (data) => {
+      setCommentaryList((prev) => [...prev, data]);
     });
 
     return () => {
@@ -412,6 +423,8 @@ export default function LiveMatch() {
           </div>
         </div>
       </GlassCard>
+
+      <AiCommentary commentaryList={commentaryList} />
     </PageEntrance>
   );
 }

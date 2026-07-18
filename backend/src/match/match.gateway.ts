@@ -12,6 +12,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MatchService } from './match.service';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
 import { UseFilters, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WsJwtGuard } from 'src/auth/guards/ws-jwt.guard';
 import { UserRole } from 'src/auth/user.schema';
@@ -26,7 +28,10 @@ export class MatchGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly matchService: MatchService) {}
+  constructor(
+    private readonly matchService: MatchService,
+    private readonly httpService: HttpService,
+  ) {}
 
   afterInit(server: any) {
     console.log('Gateway Initialized');
@@ -73,9 +78,68 @@ export class MatchGateway
 
       // emit scoreUpdated for backward compatibility
       this.server.to(data.matchId).emit('scoreUpdated', result.liveScorecard);
+
+      // Call Python AI Service in the background
+      this.generateAndBroadcastAiCommentary(data, result);
     } catch (error) {
       console.log(error);
       client.emit('error', error.message);
+    }
+  }
+
+  private async generateAndBroadcastAiCommentary(data: RecordBallDto, result: any) {
+    try {
+      const matchContext = {
+        score: result.liveScorecard.score,
+        wickets: result.liveScorecard.wickets,
+        overs: result.liveScorecard.overs,
+        ballsInCurrentOver: result.liveScorecard.ballsInCurrentOver,
+        currentInnings: result.liveScorecard.currentInnings,
+        target: result.currentInnings === 2 && result.innings1 ? result.innings1.score + 1 : null,
+        status: result.status,
+      };
+
+      const payload = {
+        ball_event: {
+          batsmanName: data.batsmanName,
+          bowlerName: data.bowlerName,
+          runs: data.runs,
+          extras: data.extras || 0,
+          extraType: data.extraType || null,
+          isWicket: data.isWicket || false,
+          wicketType: data.wicketType || null,
+          dismissedPlayer: data.dismissedPlayer || null,
+        },
+        match_context: matchContext,
+      };
+
+      const response = await lastValueFrom(
+        this.httpService.post('http://localhost:8000/commentary', payload),
+      );
+
+      if (response.data && response.data.commentary) {
+        this.server.to(data.matchId).emit('aiCommentary', {
+          matchId: data.matchId,
+          commentary: response.data.commentary,
+          timestamp: new Date(),
+        });
+      }
+    } catch (err) {
+      console.error('[NestJS AI Service Error]', err.message);
+      // Fallback
+      const fallbackMsg = data.isWicket 
+        ? `WICKET! ${data.dismissedPlayer || data.batsmanName} is out!` 
+        : data.runs === 6 
+          ? `SIX! Beautiful shot by ${data.batsmanName}!` 
+          : data.runs === 4 
+            ? `FOUR! Crucial boundary from ${data.batsmanName}!` 
+            : `${data.runs} runs scored by ${data.batsmanName}.`;
+      
+      this.server.to(data.matchId).emit('aiCommentary', {
+        matchId: data.matchId,
+        commentary: fallbackMsg,
+        timestamp: new Date(),
+      });
     }
   }
  
