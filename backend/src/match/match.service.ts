@@ -106,6 +106,12 @@ export class MatchService {
       !dto.extraType ||
       (dto.extraType !== 'WIDE' && dto.extraType !== 'NO_BALL');
 
+    // OVERRIDE current striker/non-striker/bowler with the DTO values from the frontend
+    // This allows the frontend to manually override the striker (e.g. after a wicket or mistake)
+    if (dto.batsmanName) innings.striker = dto.batsmanName;
+    if (dto.nonStrikerName) innings.nonStriker = dto.nonStrikerName;
+    if (dto.bowlerName) innings.bowler = dto.bowlerName;
+
     const totalRuns = dto.runs + (dto.extras || 0);
 
     innings.score += totalRuns;
@@ -115,23 +121,19 @@ export class MatchService {
       innings.ballsInCurrentOver += 1;
     }
 
-    // Track whether a wicket fell on this ball (for strike rotation logic)
-    const wicketFell = dto.isWicket;
-
     if (dto.isWicket) {
       innings.wickets += 1;
 
-      // Update striker if new batsman is provided
-      if (dto.newStriker) {
-        if (dto.dismissedPlayer === innings.striker) {
-          innings.striker = dto.newStriker;
-        } else if (dto.dismissedPlayer === innings.nonStriker) {
-          innings.nonStriker = dto.newStriker;
-        }
+      // Clear the dismissed player so the scorer is forced to enter the new batsman
+      if (dto.dismissedPlayer === innings.striker) {
+        innings.striker = '';
+      } else if (dto.dismissedPlayer === innings.nonStriker) {
+        innings.nonStriker = '';
+      } else {
+        innings.striker = ''; // Fallback
       }
     }
 
-    // Capture ball number BEFORE the over-complete reset
     const ballNumber = innings.ballsInCurrentOver;
 
     let overComplete = false;
@@ -139,15 +141,6 @@ export class MatchService {
       innings.overs += 1;
       innings.ballsInCurrentOver = 0;
       overComplete = true;
-
-      // Rotate strike at end of over — but NOT if a wicket fell on this ball
-      // and the striker was dismissed (new batsman already replaced them,
-      // a blind swap would put them at the wrong end)
-      if (!wicketFell) {
-        const temp = innings.striker;
-        innings.striker = innings.nonStriker;
-        innings.nonStriker = temp;
-      }
 
       // Update bowler if new bowler is provided
       if (dto.newBowler) {
@@ -173,21 +166,18 @@ export class MatchService {
 
     match.ballLog.push(ballEvent);
 
-    // Rotate striker on odd runs — only if over did not complete
-    if (!overComplete && isLegalDelivery && dto.runs % 2 !== 0) {
+    // 1. Rotate striker on odd runs for legal deliveries
+    if (isLegalDelivery && dto.runs % 2 !== 0) {
       const temp = innings.striker;
       innings.striker = innings.nonStriker;
       innings.nonStriker = temp;
     }
 
-    // Update batsman/bowler names from the DTO
-    if (!innings.striker || innings.striker === '') {
-      innings.striker = dto.batsmanName;
-    }
-    // Only set bowler from DTO if the over didn't just complete
-    // (otherwise newBowler was already set above and we don't want to overwrite it)
-    if (!overComplete) {
-      innings.bowler = dto.bowlerName;
+    // 2. Rotate strike at end of over
+    if (overComplete) {
+      const temp = innings.striker;
+      innings.striker = innings.nonStriker;
+      innings.nonStriker = temp;
     }
 
     // Check if innings is over (all out or overs finished)

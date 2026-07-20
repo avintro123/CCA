@@ -7,6 +7,8 @@ import AiCommentary from "../components/AiCommentary";
 import { Activity, Clock, Trophy } from "lucide-react";
 import { useNavigate } from "react-router";
 import { API_URL } from "../services/api";
+import Hyperspeed from "../components/Hyperspeed";
+import TargetCursor from "../components/TargetCursor";
 
 export default function LiveMatch() {
   const [matches, setMatches] = useState<any[]>([]);
@@ -128,8 +130,18 @@ export default function LiveMatch() {
       setConnectionStatus("Disconnected");
     });
 
-    newSocket.on("scoreUpdated", (data) => {
-      setMatchData(data);
+    newSocket.on("ballUpdate", (data) => {
+      setMatchData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          innings1: data.innings1,
+          innings2: data.innings2,
+          currentInnings: data.currentInnings,
+          status: data.status,
+          liveScorecard: data.liveScorecard
+        };
+      });
       triggerScorePulse();
     });
 
@@ -148,7 +160,14 @@ export default function LiveMatch() {
 
   if (!activeMatchId) {
     return (
-      <PageEntrance className="py-12 max-w-6xl mx-auto min-h-screen">
+      <>
+        <div className="fixed inset-0 z-0 opacity-50 pointer-events-none">
+          <Hyperspeed
+            effectOptions={{"distortion":"LongRaceDistortion","length":400,"roadWidth":10,"islandWidth":5,"lanesPerRoad":2,"fov":90,"fovSpeedUp":150,"speedUp":2,"carLightsFade":0.4,"totalSideLightSticks":50,"lightPairsPerRoadWay":70,"shoulderLinesWidthPercentage":0.05,"brokenLinesWidthPercentage":0.1,"brokenLinesLengthPercentage":0.5,"lightStickWidth":[0.12,0.5],"lightStickHeight":[1.3,1.7],"movingAwaySpeed":[60,80],"movingCloserSpeed":[-120,-160],"carLightsLength":[20,60],"carLightsRadius":[0.05,0.14],"carWidthPercentage":[0.3,0.5],"carShiftX":[-0.2,0.2],"carFloorSeparation":[0.05,1],"colors":{"roadColor":526344,"islandColor":657930,"background":0,"shoulderLines":1250072,"brokenLines":1250072,"leftCars":[16736115,15158624,16715818],"rightCars":[10806246,8442324,5489350],"sticks":10806246}}}
+          />
+        </div>
+        <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+        <PageEntrance className="py-12 max-w-6xl mx-auto min-h-screen relative z-10">
         <h1 className="text-4xl md:text-5xl font-bold font-display text-white mb-10 pb-4 border-b border-white/10">
           Tournament <span className="text-glow text-neon">Lobby</span>
         </h1>
@@ -188,7 +207,7 @@ export default function LiveMatch() {
                       setActiveMatchId(m._id);
                     }
                   }}
-                  className={`relative p-6 rounded-2xl cursor-pointer transition-all duration-300 border backdrop-blur-md overflow-hidden group
+                  className={`cursor-target relative p-6 rounded-2xl cursor-pointer transition-all duration-300 border backdrop-blur-md overflow-hidden group
                     ${
                       isCompleted
                         ? "bg-white/5 border-white/10 hover:bg-white/10 opacity-70 hover:opacity-100"
@@ -237,6 +256,7 @@ export default function LiveMatch() {
           </div>
         )}
       </PageEntrance>
+      </>
     );
   }
 
@@ -245,7 +265,14 @@ export default function LiveMatch() {
   // -------------------------
 
   return (
-    <PageEntrance className="py-12 max-w-6xl mx-auto min-h-screen">
+    <>
+      <div className="fixed inset-0 z-0 opacity-50 pointer-events-none">
+        <Hyperspeed
+          effectOptions={{"distortion":"LongRaceDistortion","length":400,"roadWidth":10,"islandWidth":5,"lanesPerRoad":2,"fov":90,"fovSpeedUp":150,"speedUp":2,"carLightsFade":0.4,"totalSideLightSticks":50,"lightPairsPerRoadWay":70,"shoulderLinesWidthPercentage":0.05,"brokenLinesWidthPercentage":0.1,"brokenLinesLengthPercentage":0.5,"lightStickWidth":[0.12,0.5],"lightStickHeight":[1.3,1.7],"movingAwaySpeed":[60,80],"movingCloserSpeed":[-120,-160],"carLightsLength":[20,60],"carLightsRadius":[0.05,0.14],"carWidthPercentage":[0.3,0.5],"carShiftX":[-0.2,0.2],"carFloorSeparation":[0.05,1],"colors":{"roadColor":526344,"islandColor":657930,"background":0,"shoulderLines":1250072,"brokenLines":1250072,"leftCars":[16736115,15158624,16715818],"rightCars":[10806246,8442324,5489350],"sticks":10806246}}}
+        />
+      </div>
+      <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+      <PageEntrance className="py-12 max-w-6xl mx-auto min-h-screen relative z-10">
       <div className="mb-4">
         <button
           onClick={() => setActiveMatchId(null)}
@@ -426,5 +453,6 @@ export default function LiveMatch() {
 
       <AiCommentary commentaryList={commentaryList} />
     </PageEntrance>
+    </>
   );
 }

@@ -12,9 +12,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Curtain from "./components/Curtain";
 import RegisterTeam from "./pages/RegisterTeam";
 import TeamApproval from "./pages/admin/TeamApproval";
-import ParticleBackground from "./components/ParticleBackground";
 import ToastContainer from "./components/ToastContainer";
-import CursorGlow from "./components/CursorGlow";
+import BlobCursor from "./components/BlobCursor";
 import ScrollProgress from "./components/ScrollProgress";
 import MatchDetails from "./pages/MatchDetails";
 import TeamDetails from "./pages/TeamDetails";
@@ -65,8 +64,24 @@ function App() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
-      <ParticleBackground />
-      <CursorGlow />
+      <BlobCursor
+        blobType="circle"
+        fillColor="#adc756"
+        trailCount={3}
+        sizes={[40, 70, 70]}
+        innerSizes={[27, 35, 35]}
+        innerColor="rgba(255,255,255,0.8)"
+        opacities={[0.3, 0.3, 0.3]}
+        shadowColor="rgba(0,0,0,0.75)"
+        shadowBlur={9}
+        shadowOffsetX={-18}
+        shadowOffsetY={10}
+        filterStdDeviation={30}
+        useFilter={true}
+        fastDuration={0.1}
+        slowDuration={0.55}
+        zIndex={100}
+      />
       <ScrollProgress />
       <ToastContainer />
       <Curtain />

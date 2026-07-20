@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import NeonButton from "../components/NeonButton";
+import CurvedLoop from "../components/CurvedLoop";
 import Bottom from "../components/bottom";
+import Ferrofluid from "../components/Ferrofluid";
 import MatchCountdown from "../components/MatchCountdown";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -218,8 +220,27 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="gradient-mesh-hero -mx-6 px-6">
-      <div className="max-w-7xl mx-auto pt-6 px-6">
+    <div className="gradient-mesh-hero -mx-6 px-6 relative">
+      <div className="fixed inset-0 z-0 opacity-50">
+        <Ferrofluid
+          colors={["#ffffff","#ffffff","#ffffff"]}
+          speed={0.5}
+          scale={1}
+          turbulence={1}
+          fluidity={0.1}
+          rimWidth={0.2}
+          sharpness={3}
+          shimmer={1}
+          glow={2}
+          flowDirection="down"
+          opacity={1}
+          mouseInteraction={true}
+          mouseStrength={1}
+          mouseRadius={0.3}
+        />
+      </div>
+      <div className="relative z-10">
+        <div className="max-w-7xl mx-auto pt-6 px-6">
         <MatchCountdown />
       </div>
       {/* 1. Hero Slideshow Section */}
@@ -392,8 +413,16 @@ export default function Home() {
           ))}
         </div>
       </div>
+      <CurvedLoop 
+        marqueeText="CHOAPL✦ CRICKET ✦ ASSOCIATION ✦ "
+        speed={1.4}
+        curveAmount={500}
+        direction="right"
+        interactive={true}
+      />
       {/* 4. Elastic Text Footer */}
       <Bottom />
+      </div>
     </div>
   );
 }

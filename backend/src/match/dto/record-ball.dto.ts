@@ -22,6 +22,10 @@ export class RecordBallDto {
   @IsNotEmpty()
   batsmanName: string;
 
+  @IsOptional()
+  @IsString()
+  nonStrikerName?: string;
+
   @IsNumber()
   @Min(0)
   @Max(6)

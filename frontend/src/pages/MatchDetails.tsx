@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import GlassCard from "../components/GlassCard";
 import PageEntrance from "../components/PageEntrance";
 import { Trophy, Clock, ArrowLeft, Calendar, Shield } from "lucide-react";
+import Hyperspeed from "../components/Hyperspeed";
 import { API_URL } from "../services/api";
 
 export default function MatchDetails() {
@@ -107,7 +108,13 @@ export default function MatchDetails() {
   const inningsBalls = (match.ballLog || []).filter((b: any) => b.innings === activeInningsTab);
 
   return (
-    <PageEntrance className="py-12 max-w-5xl mx-auto min-h-screen">
+    <>
+      {isCompleted && (
+        <div className="fixed inset-0 z-0 opacity-50 pointer-events-none">
+          <Hyperspeed />
+        </div>
+      )}
+      <PageEntrance className="py-12 max-w-5xl mx-auto min-h-screen relative z-10">
       <button
         onClick={() => navigate(-1)}
         className="text-neon hover:underline flex items-center gap-2 font-bold tracking-widest text-xs uppercase mb-8 cursor-pointer"
@@ -350,5 +357,6 @@ export default function MatchDetails() {
         )}
       </GlassCard>
     </PageEntrance>
+    </>
   );
 }

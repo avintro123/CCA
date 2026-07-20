@@ -141,10 +141,10 @@ export default function ScoringInterface() {
       if (data.liveScorecard) {
         setLiveScore(data.liveScorecard);
         // Auto-sync striker/non-striker/bowler from backend
-        if (data.liveScorecard.striker) setStriker(data.liveScorecard.striker);
-        if (data.liveScorecard.nonStriker)
+        if (data.liveScorecard.striker !== undefined) setStriker(data.liveScorecard.striker);
+        if (data.liveScorecard.nonStriker !== undefined)
           setNonStriker(data.liveScorecard.nonStriker);
-        if (data.liveScorecard.bowler) setBowler(data.liveScorecard.bowler);
+        if (data.liveScorecard.bowler !== undefined) setBowler(data.liveScorecard.bowler);
       }
     });
 
@@ -216,6 +216,7 @@ export default function ScoringInterface() {
     socket.emit("recordBall", {
       matchId: activeMatch._id,
       batsmanName: striker,
+      nonStrikerName: nonStriker,
       bowlerName: bowler,
       runs: runs,
       extras: extraType ? 1 : 0,

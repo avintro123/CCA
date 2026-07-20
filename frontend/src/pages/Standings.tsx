@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { fetchStandings } from "../services/api";
 import GlassCard from "../components/GlassCard";
 import PageEntrance from "../components/PageEntrance";
+import LightRays from "../components/LightRays";
 import gsap from "gsap";
 
 interface TeamStanding {
@@ -91,7 +92,21 @@ export default function Standings() {
   const maxPoints = standings[0]?.points || 1;
 
   return (
-    <PageEntrance className="py-12">
+    <>
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-100">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#7df9ff"
+          raysSpeed={1.5}
+          lightSpread={0.8}
+          rayLength={1.2}
+          followMouse={true}
+          mouseInfluence={0.1}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
+      </div>
+      <PageEntrance className="py-12 relative z-10">
       <div className="flex items-center gap-4 mb-8">
         <Trophy className="text-neon w-10 h-10" />
         <h1 className="text-4xl font-bold font-display text-white">
@@ -215,5 +230,6 @@ export default function Standings() {
         </div>
       </GlassCard>
     </PageEntrance>
+    </>
   );
 }

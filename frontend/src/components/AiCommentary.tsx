@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import GlassCard from "./GlassCard";
 import { Sparkles, MessageSquare } from "lucide-react";
+import ShinyText from "./ShinyText";
+import ElectricBorder from "./ElectricBorder";
 
 interface CommentaryLine {
   commentary: string;
@@ -47,11 +49,12 @@ export default function AiCommentary({ commentaryList }: AiCommentaryProps) {
   }, [commentaryList, typedLatestText]);
 
   return (
-    <GlassCard className="mt-8 border-neon/20 overflow-hidden" padding="p-6">
+    <ElectricBorder color="#7df9ff" speed={1} chaos={0.12} borderRadius={24} className="mt-8">
+      <GlassCard className="overflow-hidden border-none" padding="p-6">
       <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
         <h3 className="text-neon font-heading font-black text-lg tracking-widest flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-neon animate-pulse" />
-          AI LIVE COMMENTARY
+          <ShinyText text="AI LIVE COMMENTARY" speed={2} color="#b2ff05" shineColor="#ffffff" />
         </h3>
         <span className="text-[10px] font-black tracking-wider text-gray-500 uppercase px-2 py-0.5 bg-neon/10 rounded-full border border-neon/20">
           GEMINI 2.0 FLASH
@@ -78,7 +81,7 @@ export default function AiCommentary({ commentaryList }: AiCommentaryProps) {
                 Latest Delivery
               </span>
               <p className="text-white font-heading font-bold text-base leading-relaxed">
-                {typedLatestText}
+                <ShinyText text={typedLatestText} speed={3} color="#ffffff" shineColor="#b2ff05" />
                 <span className="inline-block w-1.5 h-4 bg-neon ml-1 animate-ping" />
               </p>
             </div>
@@ -114,6 +117,7 @@ export default function AiCommentary({ commentaryList }: AiCommentaryProps) {
           </div>
         </div>
       )}
-    </GlassCard>
+      </GlassCard>
+    </ElectricBorder>
   );
 }
