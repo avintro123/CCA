@@ -1,11 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router";
-import { Loader2, Plus, Save, Trash, Trophy } from "lucide-react";
-import GlassCard from "../components/GlassCard";
-import NeonButton from "../components/NeonButton";
-import PageEntrance from "../components/PageEntrance";
+import {
+  ArrowRight,
+  Plus,
+  Trash,
+  Loader2,
+  Trophy,
+  Crown,
+} from "lucide-react";
 import { API_URL } from "../services/api";
+import LiquidSelect from "../components/LiquidSelect";
+
+const VIDEO_SRC =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4";
+
+const FADE_DURATION = 500; // ms
+const FADE_OUT_BUFFER = 0.55; // seconds before video end
 
 const PlayerRole = {
   BATSMAN: "BATSMAN",
@@ -26,6 +37,11 @@ export default function RegisterTeam() {
   const { token } = useAuthStore();
   const navigate = useNavigate();
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const fadingOutRef = useRef(false);
+
+  // ── Form State ──
   const [teamName, setTeamName] = useState("");
   const [players, setPlayers] = useState<Player[]>([
     { name: "", role: PlayerRole.BATSMAN, isCaptain: true },
@@ -35,6 +51,94 @@ export default function RegisterTeam() {
     text: string;
   }>({ type: null, text: "" });
 
+  const ROLE_LABELS: Record<PlayerRoleType, string> = {
+    BATSMAN: "Batsman",
+    BOWLER: "Bowler",
+    ALL_ROUNDER: "All Rounder",
+    WICKET_KEEPER: "Wicket Keeper",
+  };
+
+  // ── Video Fade System ──
+  const cancelAnim = useCallback(() => {
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+  }, []);
+
+  const fade = useCallback(
+    (direction: "in" | "out", duration: number, onComplete?: () => void) => {
+      cancelAnim();
+      const video = videoRef.current;
+      if (!video) return;
+
+      const startOpacity = parseFloat(video.style.opacity || "0");
+      const targetOpacity = direction === "in" ? 1 : 0;
+      const delta = targetOpacity - startOpacity;
+
+      if (Math.abs(delta) < 0.01) {
+        video.style.opacity = String(targetOpacity);
+        onComplete?.();
+        return;
+      }
+
+      const startTime = performance.now();
+      const adjustedDuration = duration * Math.abs(delta);
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / adjustedDuration, 1);
+        video.style.opacity = String(startOpacity + delta * progress);
+
+        if (progress < 1) {
+          animFrameRef.current = requestAnimationFrame(step);
+        } else {
+          animFrameRef.current = null;
+          onComplete?.();
+        }
+      };
+
+      animFrameRef.current = requestAnimationFrame(step);
+    },
+    [cancelAnim]
+  );
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.style.opacity = "0";
+    const handleCanPlay = () => fade("in", FADE_DURATION);
+    video.addEventListener("canplay", handleCanPlay, { once: true });
+    return () => {
+      video.removeEventListener("canplay", handleCanPlay);
+      cancelAnim();
+    };
+  }, [fade, cancelAnim]);
+
+  const handleTimeUpdate = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || fadingOutRef.current) return;
+    const remaining = video.duration - video.currentTime;
+    if (remaining <= FADE_OUT_BUFFER && remaining > 0) {
+      fadingOutRef.current = true;
+      fade("out", FADE_DURATION);
+    }
+  }, [fade]);
+
+  const handleEnded = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    cancelAnim();
+    video.style.opacity = "0";
+    setTimeout(() => {
+      video.currentTime = 0;
+      video.play();
+      fadingOutRef.current = false;
+      fade("in", FADE_DURATION);
+    }, 100);
+  }, [fade, cancelAnim]);
+
+  // ── Form Handlers ──
   const handleAddPlayer = () => {
     setPlayers([
       ...players,
@@ -43,7 +147,7 @@ export default function RegisterTeam() {
   };
 
   const handleRemovePlayer = (idx: number) => {
-    if (players.length <= 1) return; // Prevent removing the last slot
+    if (players.length <= 1) return;
     const newPlayers = [...players];
     newPlayers.splice(idx, 1);
     setPlayers(newPlayers);
@@ -51,12 +155,9 @@ export default function RegisterTeam() {
 
   const handlePlayerChange = (idx: number, field: keyof Player, value: any) => {
     const newPlayers = [...players];
-
-    // Logic to enforce exclusively one Captain per team
     if (field === "isCaptain" && value === true) {
       newPlayers.forEach((p) => (p.isCaptain = false));
     }
-
     newPlayers[idx] = { ...newPlayers[idx], [field]: value };
     setPlayers(newPlayers);
   };
@@ -71,7 +172,6 @@ export default function RegisterTeam() {
       return;
     }
 
-    // Safety filter to rip out accidentally empty player slots
     const validPlayers = players.filter((p) => p.name.trim() !== "");
 
     if (teamName.trim() === "" || validPlayers.length === 0) {
@@ -85,7 +185,7 @@ export default function RegisterTeam() {
     try {
       setStatusMsg({
         type: "loading",
-        text: "Submitting Roaster to backend...",
+        text: "Submitting Roster to backend...",
       });
 
       const response = await fetch(`${API_URL}/tournament/teams`, {
@@ -123,151 +223,204 @@ export default function RegisterTeam() {
     }
   };
 
+  // ── Unauthenticated View ──
   if (!token) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <Trophy className="w-20 h-20 text-gray-600 mb-6" />
-        <h1 className="text-4xl text-white font-heading font-bold mb-4">
-          Login Required
-        </h1>
-        <p className="text-gray-400 max-w-md mx-auto">
-          Please log in using your Google account to register a team for the
-          tournament.
-        </p>
+      <div className="min-h-screen bg-black overflow-hidden flex flex-col relative">
+        <video
+          ref={videoRef}
+          src={VIDEO_SRC}
+          muted
+          autoPlay
+          playsInline
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          className="fixed inset-0 w-full h-full object-cover translate-y-[17%]"
+          style={{ opacity: 0 }}
+        />
+
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+          <Trophy className="w-20 h-20 text-white/30 mb-6" />
+          <h1
+            className="text-4xl md:text-5xl text-white mb-4 tracking-tight"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+          >
+            Login Required
+          </h1>
+          <p className="text-white/60 max-w-md mx-auto text-sm leading-relaxed">
+            Please log in using your Google account to register a team for the
+            tournament.
+          </p>
+        </div>
+
       </div>
     );
   }
 
+  // ── Main Registration View ──
   return (
-    <PageEntrance className="py-12 max-w-5xl mx-auto min-h-screen">
-      <div className="flex items-center gap-4 mb-10">
-        <Trophy className="text-neon w-10 h-10" />
-        <h1 className="text-4xl font-bold font-display text-white">
-          Register <span className="text-glow text-neon">Your Team</span>
+    <div className="min-h-screen bg-black overflow-hidden flex flex-col relative">
+      {/* Background Video */}
+      <video
+        ref={videoRef}
+        src={VIDEO_SRC}
+        muted
+        autoPlay
+        playsInline
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleEnded}
+        className="fixed inset-0 w-full h-full object-cover translate-y-[17%]"
+        style={{ opacity: 0 }}
+      />
+
+
+
+      {/* Hero + Form */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 md:px-6 py-8">
+        <h1
+          className="text-5xl md:text-6xl lg:text-7xl text-white mb-8 tracking-tight whitespace-nowrap"
+          style={{ fontFamily: "'Instrument Serif', serif" }}
+        >
+          Register Your Team
         </h1>
-      </div>
-      <GlassCard padding="p-8">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          {/* TEAM NAME */}
-          <div className="flex flex-col">
-            <label className="text-gray-400 font-bold mb-2 uppercase tracking-widest text-sm">
-              Franchise / Team Name
-            </label>
-            <input
-              type="text"
-              required
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-              placeholder="e.g. Royal Challengers"
-              className="bg-black/40 border border-white/10 rounded-xl px-6 py-4 text-white text-2xl font-heading focus:outline-none focus:border-neon transition-colors"
-            />
-          </div>
-          <hr className="border-white/10 my-4" />
-          {/* DYNAMIC ROSTER */}
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-end mb-2">
-              <label className="text-gray-400 font-bold uppercase tracking-widest text-sm">
-                Squad Roster
+
+        {/* Registration Form Card */}
+        <div className="max-w-2xl w-full">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            {/* Team Name */}
+            <div className="liquid-glass rounded-2xl p-6">
+              <label className="text-white/50 text-xs font-medium uppercase tracking-[0.2em] mb-3 block">
+                Franchise / Team Name
               </label>
-              <span className="text-neon/70 text-xs">
-                At least 1 player required
-              </span>
+              <input
+                type="text"
+                required
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                placeholder="e.g. Royal Challengers"
+                className="w-full bg-transparent border-none outline-none text-white text-2xl placeholder:text-white/20"
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+              />
             </div>
-            {players.map((player, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col md:flex-row gap-4 items-center bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors"
-              >
-                {/* 1. Player Name */}
-                <input
-                  type="text"
-                  required
-                  value={player.name}
-                  onChange={(e) =>
-                    handlePlayerChange(idx, "name", e.target.value)
-                  }
-                  placeholder={`Player ${idx + 1} Name`}
-                  className="flex-1 w-full bg-black/40 border border-transparent rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neon/50"
-                />
-                {/* 2. Player Role */}
-                <select
-                  value={player.role}
-                  onChange={(e) =>
-                    handlePlayerChange(idx, "role", e.target.value)
-                  }
-                  className="w-full md:w-auto bg-black/80 border border-transparent rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:border-neon/50 cursor-pointer"
-                >
-                  <option value={PlayerRole.BATSMAN}>Batsman</option>
-                  <option value={PlayerRole.BOWLER}>Bowler</option>
-                  <option value={PlayerRole.ALL_ROUNDER}>All Rounder</option>
-                  <option value={PlayerRole.WICKET_KEEPER}>
-                    Wicket Keeper
-                  </option>
-                </select>
-                {/* 3. Captain Toggle */}
+
+            {/* Squad Roster */}
+            <div className="liquid-glass rounded-2xl p-6">
+              <div className="flex justify-between items-center mb-4">
+                <label className="text-white/50 text-xs font-medium uppercase tracking-[0.2em]">
+                  Squad Roster
+                </label>
+                <span className="text-white/30 text-xs">
+                  At least 1 player required
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {players.map((player, idx) => (
+                  <div
+                    key={idx}
+                    className="liquid-glass rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center"
+                  >
+                    {/* Player Name */}
+                    <input
+                      type="text"
+                      required
+                      value={player.name}
+                      onChange={(e) =>
+                        handlePlayerChange(idx, "name", e.target.value)
+                      }
+                      placeholder={`Player ${idx + 1} Name`}
+                      className="flex-1 w-full bg-white/5 rounded-lg px-4 py-3 text-white text-sm border-none outline-none placeholder:text-white/25 focus:bg-white/10 transition-colors"
+                    />
+
+                    {/* Role Select */}
+                    <div className="w-full md:w-44">
+                      <LiquidSelect
+                        value={player.role}
+                        onChange={(val) =>
+                          handlePlayerChange(idx, "role", val)
+                        }
+                        options={(Object.keys(PlayerRole) as PlayerRoleType[]).map(
+                          (r) => ({
+                            value: r,
+                            label: ROLE_LABELS[r],
+                          })
+                        )}
+                      />
+                    </div>
+
+                    {/* Captain Toggle */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handlePlayerChange(idx, "isCaptain", !player.isCaptain)
+                      }
+                      className={`w-full md:w-auto px-5 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                        player.isCaptain
+                          ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                          : "bg-white/5 text-white/50 hover:bg-white/10"
+                      }`}
+                    >
+                      <Crown size={14} />
+                      {player.isCaptain ? "Captain" : "Make Cap"}
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePlayer(idx)}
+                      disabled={players.length <= 1}
+                      className="w-full md:w-auto p-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <Trash className="w-4 h-4 mx-auto" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Player */}
+              <div className="flex justify-center mt-4">
                 <button
                   type="button"
-                  onClick={() =>
-                    handlePlayerChange(idx, "isCaptain", !player.isCaptain)
-                  }
-                  className={`w-full md:w-32 py-3 rounded-lg font-bold text-sm tracking-widest transition-all ${
-                    player.isCaptain
-                      ? "bg-neon text-black shadow-[0_0_15px_rgba(178,255,5,0.4)]"
-                      : "bg-white/10 text-gray-400 hover:bg-white/20"
-                  }`}
+                  onClick={handleAddPlayer}
+                  className="liquid-glass rounded-full px-6 py-2.5 text-white/70 text-xs font-medium uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2"
                 >
-                  {player.isCaptain ? "CAPTAIN" : "MAKE CAP"}
-                </button>
-                {/* 4. Delete Row (Hides if only 1 exists) */}
-                <button
-                  type="button"
-                  onClick={() => handleRemovePlayer(idx)}
-                  disabled={players.length <= 1}
-                  className="w-full md:w-auto p-3 bg-red-100 text-red-600 rounded-lg disabled:opacity-70 disabled:cursor-not-allowed hover:bg-red-600/40 transition-colors"
-                >
-                  <Trash className="w-5 h-5 mx-auto" />
+                  <Plus className="w-4 h-4" /> Add Player
                 </button>
               </div>
-            ))}
-          </div>
-          <div className="flex justify-center mt-2">
-            <button
-              type="button"
-              onClick={handleAddPlayer}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-neon border border-neon hover:bg-neon/10 transition-colors text-sm font-bold tracking-widest uppercase"
-            >
-              <Plus className="w-5 h-5" /> Add Another Player
-            </button>
-          </div>
-          {/* STATUS ALERTS */}
-          {statusMsg.type && (
-            <div
-              className={`p-4 rounded-xl flex items-center justify-center gap-3 font-bold text-sm tracking-wider ${
-                statusMsg.type === "error"
-                  ? "bg-red-500/20 text-red-400 border border-red-500/50"
-                  : statusMsg.type === "loading"
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/50"
-                    : "bg-neon/20 text-neon border border-neon/50"
-              }`}
-            >
-              {statusMsg.type === "loading" && (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              )}
-              {statusMsg.text}
             </div>
-          )}
-          {/* SUBMIT */}
-          <div className="mt-8 flex justify-end">
-            <NeonButton
-              type="submit"
-              variant="primary"
-              className="px-12 py-4 text-xl flex items-center gap-3"
-            >
-              <Save className="w-6 h-6" /> SUBMIT ROSTER
-            </NeonButton>
-          </div>
-        </form>
-      </GlassCard>
-    </PageEntrance>
+
+            {/* Status Messages */}
+            {statusMsg.type && (
+              <div
+                className={`liquid-glass rounded-xl p-4 flex items-center justify-center gap-3 text-sm font-medium ${
+                  statusMsg.type === "error"
+                    ? "!bg-red-500/10 text-red-400"
+                    : statusMsg.type === "loading"
+                      ? "!bg-blue-500/10 text-blue-400"
+                      : "!bg-emerald-500/10 text-emerald-400"
+                }`}
+              >
+                {statusMsg.type === "loading" && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                {statusMsg.text}
+              </div>
+            )}
+
+            {/* Submit */}
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                className="bg-white text-black rounded-full px-10 py-3.5 font-medium text-sm flex items-center gap-3 hover:bg-white/90 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+              >
+                Submit Roster
+                <ArrowRight size={18} />
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
   );
 }

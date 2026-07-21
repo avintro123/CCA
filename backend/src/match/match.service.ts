@@ -24,7 +24,11 @@ export class MatchService {
     }
 
     const newMatch = new this.matchModel(createMatchDto);
-    return await newMatch.save();
+    const saved = await newMatch.save();
+    return await this.matchModel
+      .findById(saved._id)
+      .populate('teamA teamB')
+      .exec();
   }
 
   async getAllMatches() {
@@ -333,7 +337,11 @@ export class MatchService {
     match.liveScorecard.currentInnings = 1;
     match.liveScorecard.battingTeam = match.innings1.battingTeamId;
 
-    return await match.save();
+    const saved = await match.save();
+    return await this.matchModel
+      .findById(saved._id)
+      .populate('teamA teamB tossWinner')
+      .exec();
   }
 
   // helper: get ball for a specific match

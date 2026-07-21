@@ -13,6 +13,7 @@ import {
 import GlassCard from "../../components/GlassCard";
 import NeonButton from "../../components/NeonButton";
 import PageEntrance from "../../components/PageEntrance";
+import LiquidSelect from "../../components/LiquidSelect";
 import { useToastStore } from "../../store/useToastStore";
 import { useNavigate } from "react-router";
 import { API_URL } from "../../services/api";
@@ -325,6 +326,12 @@ export default function ScoringInterface() {
     setStriker("");
   };
 
+  // Build team options for LiquidSelect
+  const teamOptions = teams.filter(t => t && t._id).map((t) => ({
+    value: t._id,
+    label: t.name,
+  }));
+
   // Permission Guard
   if (!token || (user?.role !== "admin" && user?.role !== "scorer")) {
     return (
@@ -355,35 +362,23 @@ export default function ScoringInterface() {
               onSubmit={handleScheduleMatch}
               className="flex flex-col gap-4"
             >
-              <select
+              <LiquidSelect
                 required
-                className="bg-black/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-neon cursor-pointer"
                 value={teamAId}
-                onChange={(e) => setTeamAId(e.target.value)}
-              >
-                <option value="">Select Team A</option>
-                {teams.filter(t => t && t._id).map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setTeamAId}
+                options={teamOptions}
+                placeholder="Select Team A"
+              />
 
               <div className="text-center text-neon font-black">VS</div>
 
-              <select
+              <LiquidSelect
                 required
-                className="bg-black/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-neon cursor-pointer"
                 value={teamBId}
-                onChange={(e) => setTeamBId(e.target.value)}
-              >
-                <option value="">Select Team B</option>
-                {teams.filter(t => t && t._id).map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setTeamBId}
+                options={teamOptions}
+                placeholder="Select Team B"
+              />
 
               <input
                 type="number"
@@ -474,6 +469,11 @@ export default function ScoringInterface() {
 
   // --- VIEW 1.5: TOSS SETUP INTERFACE ---
   if (activeMatch.status === "SCHEDULED") {
+    const tossTeamOptions = [
+      { value: activeMatch.teamA?._id, label: activeMatch.teamA?.name },
+      { value: activeMatch.teamB?._id, label: activeMatch.teamB?.name },
+    ].filter(o => o.value && o.label);
+
     return (
       <PageEntrance className="py-12 max-w-2xl mx-auto min-h-screen">
         <button
@@ -493,16 +493,13 @@ export default function ScoringInterface() {
               <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2 block">
                 Who won the toss?
               </label>
-              <select
+              <LiquidSelect
                 required
-                className="bg-black/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-neon cursor-pointer w-full"
                 value={tossWinnerId}
-                onChange={(e) => setTossWinnerId(e.target.value)}
-              >
-                <option value="">Select Toss Winner Team</option>
-                <option value={activeMatch.teamA?._id}>{activeMatch.teamA?.name}</option>
-                <option value={activeMatch.teamB?._id}>{activeMatch.teamB?.name}</option>
-              </select>
+                onChange={setTossWinnerId}
+                options={tossTeamOptions}
+                placeholder="Select Toss Winner Team"
+              />
             </div>
 
             <div>
@@ -565,10 +562,49 @@ export default function ScoringInterface() {
 
   const isMatchCompleted = activeMatch.status === "COMPLETED";
 
-  const battingTeam =
-    activeMatch.currentInnings === 1 ? activeMatch.teamA : activeMatch.teamB;
-  const bowlingTeam =
-    activeMatch.currentInnings === 1 ? activeMatch.teamB : activeMatch.teamA;
+  // Helper to resolve full team object (fallback to `teams` list if activeMatch has string IDs)
+  const getTeamObject = (teamOrId: any) => {
+    if (!teamOrId) return null;
+    if (typeof teamOrId === "object" && teamOrId.name && Array.isArray(teamOrId.players) && teamOrId.players.length > 0) {
+      return teamOrId;
+    }
+    const idStr = typeof teamOrId === "string" ? teamOrId : teamOrId._id?.toString();
+    const found = teams.find((t) => t._id?.toString() === idStr);
+    return found || (typeof teamOrId === "object" ? teamOrId : null);
+  };
+
+  const teamAObj = getTeamObject(activeMatch.teamA);
+  const teamBObj = getTeamObject(activeMatch.teamB);
+
+  const currentInningsNum = liveScore?.currentInnings || activeMatch.currentInnings || 1;
+  const inningsKey = currentInningsNum === 2 ? "innings2" : "innings1";
+  const battingTeamId = activeMatch[inningsKey]?.battingTeamId || activeMatch.innings1?.battingTeamId;
+
+  let battingTeam = teamAObj;
+  let bowlingTeam = teamBObj;
+
+  if (battingTeamId && teamBObj && (teamBObj._id?.toString() === battingTeamId.toString())) {
+    battingTeam = teamBObj;
+    bowlingTeam = teamAObj;
+  }
+
+  const strikerOptions = (battingTeam?.players || []).map((p: any) => {
+    const name = typeof p === "string" ? p : p.name;
+    const role = typeof p === "object" && p.role ? ` (${p.role.replace(/_/g, " ")})` : "";
+    return {
+      value: name,
+      label: `${name}${role}`,
+    };
+  });
+
+  const bowlerOptions = (bowlingTeam?.players || []).map((p: any) => {
+    const name = typeof p === "string" ? p : p.name;
+    const role = typeof p === "object" && p.role ? ` (${p.role.replace(/_/g, " ")})` : "";
+    return {
+      value: name,
+      label: `${name}${role}`,
+    };
+  });
 
   return (
     <div className={`py-8 max-w-4xl mx-auto ${shakeActive ? "screen-shake" : ""}`}>
@@ -741,18 +777,12 @@ export default function ScoringInterface() {
               <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
                 Striker
               </label>
-              <select
+              <LiquidSelect
                 value={striker}
-                onChange={(e) => setStriker(e.target.value)}
-                className="bg-black/50 border border-neon/30 p-4 rounded-xl text-white text-sm outline-none"
-              >
-                <option value="">Select Batsman</option>
-                {battingTeam?.players?.map((p: any) => (
-                  <option key={p.name} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setStriker}
+                options={strikerOptions}
+                placeholder="Select Batsman"
+              />
             </div>
 
             {/* Non-Striker Selection */}
@@ -760,18 +790,12 @@ export default function ScoringInterface() {
               <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
                 Non-Striker
               </label>
-              <select
+              <LiquidSelect
                 value={nonStriker}
-                onChange={(e) => setNonStriker(e.target.value)}
-                className="bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm outline-none"
-              >
-                <option value="">Select Batsman</option>
-                {battingTeam?.players?.map((p: any) => (
-                  <option key={p.name} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setNonStriker}
+                options={strikerOptions}
+                placeholder="Select Batsman"
+              />
             </div>
 
             {/* Bowler Selection */}
@@ -779,24 +803,18 @@ export default function ScoringInterface() {
               <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
                 Bowler
               </label>
-              <select
+              <LiquidSelect
                 value={bowler}
-                onChange={(e) => setBowler(e.target.value)}
-                className="bg-black/50 border border-red-500/30 p-4 rounded-xl text-white text-sm outline-none"
-              >
-                <option value="">Select Bowler</option>
-                {bowlingTeam?.players?.map((p: any) => (
-                  <option key={p.name} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setBowler}
+                options={bowlerOptions}
+                placeholder="Select Bowler"
+              />
             </div>
           </div>
         </GlassCard>
       )}
 
-      {/* Scoring Buttons — only for active matches */}
+      {/* Complete Match Button */}
       {!isMatchCompleted && (
         <div className="mt-8 flex justify-end">
            <button

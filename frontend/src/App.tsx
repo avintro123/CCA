@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router";
+import { Routes, Route, useNavigate, useLocation } from "react-router";
 import Standings from "./pages/Standings";
 import Home from "./pages/Home";
 import Navbar from "./components/layout/Navbar";
@@ -22,7 +22,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((state) => state.login);
+  const isRegisterPage = location.pathname === "/register";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -63,29 +65,36 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-dark-bg">
-      <BlobCursor
-        blobType="circle"
-        fillColor="#adc756"
-        trailCount={3}
-        sizes={[40, 70, 70]}
-        innerSizes={[27, 35, 35]}
-        innerColor="rgba(255,255,255,0.8)"
-        opacities={[0.3, 0.3, 0.3]}
-        shadowColor="rgba(0,0,0,0.75)"
-        shadowBlur={9}
-        shadowOffsetX={-18}
-        shadowOffsetY={10}
-        filterStdDeviation={30}
-        useFilter={true}
-        fastDuration={0.1}
-        slowDuration={0.55}
-        zIndex={100}
-      />
-      <ScrollProgress />
-      <ToastContainer />
-      <Curtain />
+    <div className={isRegisterPage ? "min-h-screen bg-black" : "min-h-screen bg-dark-bg"}>
+      {!isRegisterPage && (
+        <>
+          <BlobCursor
+            blobType="circle"
+            fillColor="#adc756"
+            trailCount={3}
+            sizes={[40, 70, 70]}
+            innerSizes={[27, 35, 35]}
+            innerColor="rgba(255,255,255,0.8)"
+            opacities={[0.3, 0.3, 0.3]}
+            shadowColor="rgba(0,0,0,0.75)"
+            shadowBlur={9}
+            shadowOffsetX={-18}
+            shadowOffsetY={10}
+            filterStdDeviation={30}
+            useFilter={true}
+            fastDuration={0.1}
+            slowDuration={0.55}
+            zIndex={100}
+          />
+          <ScrollProgress />
+          <Curtain />
+        </>
+      )}
       <Navbar />
+      <ToastContainer />
+      <Routes>
+        <Route path="/register" element={<RegisterTeam />} />
+      </Routes>
       <main className="max-w-7xl mx-auto px-6 pt-24 pb-0">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -95,7 +104,6 @@ function App() {
 
           <Route path="/admin" element={<ScoringInterface />} />
           <Route path="/admin/teams" element={<TeamApproval />} />
-          <Route path="/register" element={<RegisterTeam />} />
           <Route path="/match/:id" element={<MatchDetails />} />
           <Route path="/team/:id" element={<TeamDetails />} />
         </Routes>
